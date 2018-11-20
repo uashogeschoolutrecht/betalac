@@ -1,0 +1,435 @@
+---
+title: "Exercise - Proteolytic cleavage; Beta-Lactoglobulin"
+author: "Marc A.T. Teunis"
+date: '`r Sys.Date()`'
+output:
+  html_document
+---
+
+__Try answering the questions in an Rmd script__
+
+```{r setup}
+knitr::opts_chunk$set(echo = FALSE, 
+                      warning = FALSE, 
+                      message = FALSE, 
+                      error = FALSE,
+                      results = 'hide',
+                      fig.show = 'hide')
+``` 
+
+## Setting the project root
+We need to an object for the root of the project for purposes yet to explain.
+```{r, echo=TRUE, eval=TRUE, results='markup'}
+if (!require("rprojroot")) install.packages("rprojroot")
+library("rprojroot")
+root <- find_root_file(criterion = is_rstudio_project)
+root
+```
+
+## Introduction
+We use the protein Beta-lactoglobulin as an example to show an _in-slico_ chemical analysis workflow in R/Bioconductor.
+
+Here we will perform an enzymatic digestion on the native beta-lactoglobulin (`BLG`) protein of different species. We will also use the Goat sequence and the Sheep sequence to explore the theory behind mass-spectromotery. The amino acid sequence for the Beta-lac (BLG) gene for the different organisms will be used.
+
+We also practice a little with alignment in this exercise.
+
+The name (`external_gene_name`) of the beta-lac encoding gene is `BLG`. Synonyms are: `PAEP`,  `LGB` or `Beta-LG`
+
+## Packages
+Load the following packages in your session:
+```{r, echo=TRUE}
+
+library(biomaRt)
+library(seqinr)
+library(rentrez)
+library(GEOquery)
+library(Biostrings)
+library(DECIPHER)
+library(cleaver)
+library(OrgMassSpecR) 
+library(protr)
+library(tidyverse)
+
+```
+
+## Data
+
+Obtain the amino-acid sequences for the Beta-Lactoglobuline protein (`BLG`) from Goat (_C. hircus_), Sheep (_O. aries_ and Domestic Cow (_B. taurus_).
+See code chunks below.
+
+Because the Goat sequence is not available via a Biomart search we download this sequence directly from Uniprot: Download the amino acid sequence for the `BLG` protein for the Sheep (_Ovis aries_) from here:  
+https://www.uniprot.org/uniprot/B2YKY6.fasta
+```{r, answer_1a_1, echo=TRUE}
+## download Goat aa sequence
+dir.create(file.path(root, "data"))
+url <- c("https://www.uniprot.org/uniprot/B2YKY6.fasta")
+download.file(url = url, destfile = file.path(root, "data", "chircus_blg_aminoacids.fasta"))
+```
+
+## Convert to Amino Acids
+```{r}
+chircus_blg_aa <- Biostrings::readAAStringSet(filepath = file.path(root, "data", "chircus_blg_aminoacids.fasta"))
+names(chircus_blg_aa) <- c("chircus")
+chircus_blg_aa
+```
+
+Alternatively, you can also use the `{protr}` package to download sequences directly from UniProt:
+You need to know the specific UniProt identifier. For Goat `BLG` this is "B2YKY6". The result is a list of aminoacid sequence(s). You can convert this list to a more convenient object with the code below, using `biostrings::AAString()` or `biostrings::AAStringSet()`. You need to unlist the list first for this to work.
+```{r, demo_protr, echo=TRUE}
+protr::getUniProt("B2YKY6") %>% 
+  unlist %>%
+  AAStringSet()
+```
+
+## Retrieve aa sequence of `BLG` protein for the Cow (_B. taurus_).
+The BLG protein has multiple synonyms. The code below uses an `lapply` loop to test for each known synonym: `BLG`, `PAEP` `Beta-LG` and `LGB` 
+```{r, demo_cow_seq, echo=TRUE}
+mart <- useMart(biomart = "ensembl")
+btaurus_mart <- useDataset(dataset = "btaurus_gene_ensembl", 
+                        mart=mart)
+
+beta_lac_gene_name <- c("BLG", "PAEP", "LGB", "Beta-LG")
+
+attributes <- listAttributes(mart = btaurus_mart)
+
+loop_gene_names <- function(x, mart){
+  results <- getBM(attributes = c('ensembl_gene_id', 
+                                  "external_gene_name",
+                                  "coding"), 
+    filters = 'external_gene_name', 
+    values = x, 
+    mart = mart) %>%
+    as_tibble() 
+    # print()
+  return(results)
+}
+
+## "PAEP" yields a result, using that
+query <- lapply(as.list(beta_lac_gene_name), 
+                loop_gene_names, 
+                mart = btaurus_mart)
+query
+names(query) <- beta_lac_gene_name
+
+## isolating the result in a dataframe
+query_btaurus <- query[["PAEP"]] 
+
+btaurus_blg_aa <- DNAStringSet(query_btaurus$coding) %>% Biostrings::translate()
+names(btaurus_blg_aa) <- "btaurus"
+btaurus_blg_aa
+```
+
+## Retrieve aa sequence for Sheep
+Now do the same for the Sheep `BLG` protein sequence. Use the code example above.
+```{r, answer_1a}
+mart <- useMart(biomart = "ensembl")
+oaries_mart <- useDataset(dataset = "oaries_gene_ensembl", 
+                        mart=mart)
+
+#datasets <- listDatasets(mart) %>% as_tibble()
+attributes <- listAttributes(mart = oaries_mart)
+#filters <- listFilters(chircus_mart)
+
+## using loop again
+query_sheep <- lapply(as.list(beta_lac_gene_name), loop_gene_names, mart = oaries_mart)
+query_sheep
+names(query_sheep) <- beta_lac_gene_name
+query_sheep <- query_sheep[["PAEP"]]
+query_sheep
+
+oaries_blg_aa <- DNAStringSet(query_sheep$coding) %>% Biostrings::translate()
+names(oaries_blg_aa) <- "oaries"
+oaries_blg_aa
+
+```
+
+Combine the three seperate amino acid sequences encoding the `BLG` protein from Cow, Goat and Sheet to one `AAStringSet`. Provide appropriate names for each sequence by setting names using `names(...) <- c(...)`. 
+
+How long is each protein(fragment)?
+
+```{r, answer_1b}
+all_aa <- c(btaurus_blg_aa, oaries_blg_aa, chircus_blg_aa)
+all_aa
+```
+
+## Multiple sequence alignment
+**2A**
+Align the amino acid sequences for the `BLG` protein from Cow, Sheep and Goat. What can you conclude from this alignment?
+```{r, answer_2a}
+alignment_blg <- AlignSeqs(all_aa)
+BrowseSeqs(alignment_blg)
+```
+
+Align the sequences for `BLG` protein from Cow and Sheep, what is you conclusion about the homology 
+```{r, answer_2b_1, results='show', fig.show='show'}
+alignment_blg <- AlignSeqs(all_aa[c(1:2)])
+BrowseSeqs(alignment_blg)
+```
+
+Now do the same for the sequence from Cow and Goat
+Which animal is most related to the Cow, on the basis of this alignment? Can you think of a way to illustrate this further?
+```{r, answer_2c}
+alignment_blg <- AlignSeqs(all_aa[c(1, 3)])
+BrowseSeqs(alignment_blg)
+```
+
+## Simularity scores
+Calculate the percentage simularity on the basis of the primary amino acid sequence between the `BLG` proteins. Use the _Bos taurus_ sequence as a reference sequence (`pattern`).
+
+**TIPS**
+
+ - use the `biostrings::pairwiseAlignment()` function
+ - use the `biostrings::pid()` function to get the simularity score, use the setting in this function `type = 'PID1'`. Look at the help file of this function to see what this setting does.
+ 
+```{r, answer_2d}
+all_aa
+
+btaurus_vs_oaries <- pairwiseAlignment(pattern = all_aa[1], subject = all_aa[2])
+btaurus_vs_chircus <- pairwiseAlignment(pattern = all_aa[1], subject = all_aa[3])
+oaries_vs_chircus <- pairwiseAlignment(pattern = all_aa[2], subject = all_aa[3])
+
+?pid
+
+pid_string <- "PID1"
+
+# percentage simularity for muliple alignments 
+pid(btaurus_vs_oaries, type = pid_string)
+pid(btaurus_vs_chircus, type = pid_string)
+pid(oaries_vs_chircus, type = pid_string)
+
+
+```
+
+## Proteolytic digestion
+
+Review the vignette from the `{OrgMassSpecR}` package. 
+Try predicting the fragments by proteolytic digestion with the trypsin enzyme, for the _Bos taurus_ BLG protein. 
+
+**TIPS:**
+
+ - Look at the vignette for the `{OrgMassSpecR}` package, it has some really good examples.
+ - set the `enzyme` option to `trypsin`
+ - Review the code below from the presentation "Mass Spectometry": recycle the code to find the solution for 3A
+
+```{r, demo_digestion, echo=TRUE}
+browseVignettes(package = "OrgMassSpecR")
+
+seq <- all_aa %>%
+  as.list()
+
+## remove * from sequences
+seq <- map(seq, str_remove_all, pattern = "\\*")
+  
+
+btaurus_blg_trypsin <- OrgMassSpecR::Digest(sequence = seq[[1]], enzyme ="trypsin") %>% as_tibble() %>%
+  mutate(width = nchar(peptide)) %>%
+  arrange(width) %>% print()
+```
+
+## Write a function that takes a sequence and returns a nice table
+```{r}
+## a single sequence as input:
+digest_sequence <- function(peptide, enzyme){
+  
+  digestion <- OrgMassSpecR::Digest(peptide, enzyme = enzyme) %>% 
+     as_tibble() %>%
+     mutate(width = nchar(peptide)) %>%
+     arrange(width) 
+  
+  
+  return(digestion)
+  
+}
+
+digest_sequence(seq[[1]], enzyme = "trypsin")
+
+names(seq)
+
+## loop over each sequence
+all_predictions <- map(seq, digest_sequence, enzyme = "trypsin")
+
+all_predictions[[1]]
+all_predictions[[2]]
+all_predictions[[3]]
+```
+
+## Let's examine the Cow a bit further
+```{r, answer_3a}
+
+## store as xlsx
+xlsx::write.xlsx(btaurus_blg_trypsin,
+                 file = file.path(root,
+                                  "data",
+                                  "btaurus_blg_trypsin.xlsx"),
+                 sheetName = "btaurus_blg_trypsin")
+
+## get the cleavage ranges
+ranges <- cleavageRanges(all_aa$btaurus, enzym="trypsin")
+ranges
+
+
+## get only cleavage sites
+sites <- cleavageSites(all_aa$btaurus, enzym="trypsin")
+
+```
+
+**3B**
+Recycling the code from question 3A, try predicting the peptide-fragments from the Goat and the Sheep. Combine these in a IRanges object, with appropriate names (use for example Species and width). Use `lapply` to achieve your goal. 
+
+
+```{r, answer_3b}
+lapply(as.list(as.character(all_aa)), cleave, enzym = "trypsin") %>%
+  purrr::flatten() %>%
+  purrr::transpose()
+
+# browseVignettes("cleaver")
+btaurus_blg_trypsin <- cleave(all_aa$btaurus, enzym="trypsin") %>%
+  as.data.frame() %>%
+  as_tibble() %>%
+  dplyr::rename(fragment = x) %>%
+  mutate(width = nchar(fragment)) %>%
+  arrange(width) %>% print
+
+
+btaurus_blg_trypsin
+
+## store as xlsx
+xlsx::write.xlsx(btaurus_blg_trypsin,
+                 file = file.path(root,
+                                  "data",
+                                  "btaurus_blg_trypsin.xlsx"),
+                 sheetName = "btaurus_blg_trypsin")
+
+## get the cleavage ranges
+ranges <- cleavageRanges(all_aa$btaurus, enzym="trypsin")
+ranges
+
+
+## get only cleavage sites
+sites <- cleavageSites(all_aa$btaurus, enzym="trypsin")
+
+```
+
+
+**3C**
+Use the function `cleavageSites()` from the `{cleaver}` package to detect all the sites at which the _Bos taurus_ `BLG` protein is cleaved. 
+
+Now convert the one-letter-amino acid code to a three-letter code with the `aaa()` function in the `{seninr}` package. Remember from the "Biological strings" (IRanges) lecture that `{seqinr}` functions work with character vectors with seperate characters for each amino acid or nucleotide.
+
+You can convert the one-letter character vector containing the full sequence string to a single character vector vector where every amino acid is a string of it's own by adapting the example below:
+
+```{r, echo=TRUE}
+## convert single string to individual character strings in a vector
+string_aa <- c(all_aa$chircus[1:4]) %>% as.character()
+string_aa_seperate <- str_split(string = string_aa, pattern = "") %>% unlist()
+
+## convert one-letter code to three letter code
+string_three_letter_aa <- seqinr::aaa(string_aa_seperate) %>% print
+```
+
+**QUESTION**
+
+Can you now figure out between which two amino acids trypsin cuts a protein?
+Try using the cleavage sites and the converted three-letter coded amino acid string encoding the `BLG` _Bos taurus_ protein.
+
+**TIPS:**
+
+ - Rember that you can use a number of digits to index a vector like:
+```{r, echo=TRUE}
+index <- c(1, 3, 6, 19, 28, 211)
+letters_vector <- (rep(LETTERS, times = 10)) 
+
+index_on_letters <- letters_vector[index] %>% print()
+```
+
+```{r, answer_2b}
+btaurus_char_three_letter_aa <- all_aa$btaurus %>% 
+  as.character() %>% 
+  str_split(string = ., pattern = "") %>%
+  unlist() %>%
+  aaa() %>%
+  print()
+
+## use cleavage sites as index
+
+btaurus_char_three_letter_aa[c(sites[[1]])]
+
+btaurus_char_three_letter_aa[c(6, 7)]
+# btaurus_char_three_letter_aa[c(42, 43)]
+```
+
+## Mass spectromtric analysis  
+
+**4A**
+Structure of the protein
+Are there any lysine or argine amino acids that are followed by a proline?
+
+```{r}
+btaurus_char_three_letter_aa[1:2]
+
+ind <- str_extract_all(string = btaurus_char_three_letter_aa, pattern = c("Pro")) %>% unlist()
+ind
+btaurus_char_three_letter_aa[ind]
+```
+
+**4B**
+## Get all structure formulas for each peptide in all digestions
+```{r}
+formula <- OrgMassSpecR::ConvertPeptide(btaurus_blg_trypsin$fragment[1])
+
+MonoisotopicMass(formula = ConvertPeptide(btaurus_blg_trypsin$fragment[1]))
+MolecularWeight(formula = ConvertPeptide(btaurus_blg_trypsin$fragment[1]))
+
+
+as_tibble(formula)
+
+btaurus_blg_trypsin$fragment
+
+get_formula <- function(peptide){
+  
+  formula <- OrgMassSpecR::ConvertPeptide(peptide)
+  
+  df <- formula %>% as_tibble()
+
+    return(df)
+
+}
+  
+get_formula(peptide = btaurus_blg_trypsin$fragment[1])  
+  
+
+peptide_list <- as.list(btaurus_blg_trypsin$fragment)
+
+## safe loop with error catching
+formulae <- map(peptide_list, safely(get_formula))  
+formulae <- purrr::transpose(formulae)
+formulae$result %>% dplyr::bind_rows()
+formulae$error
+```
+
+## Isotopic Distribution
+```{r}
+id <- IsotopicDistribution(formula = formula) %>%
+  as_tibble() %>%
+  print()
+```
+
+## Plot Isotopic Distribution MZ - Intensity
+```{r}
+
+formula
+
+ggplot(data = id, aes(x = mz, y = intensity)) +
+  geom_point() +
+  geom_segment(aes(xend = mz, yend=-Inf)) +
+  ggtitle("Fragment 1, Bos Taurus")
+
+ggplot(data = id, aes(x = mz, y = log10(intensity))) +
+  geom_point() +
+  geom_segment(aes(xend = mz, yend=-Inf))
+
+```
+
+
+
+
