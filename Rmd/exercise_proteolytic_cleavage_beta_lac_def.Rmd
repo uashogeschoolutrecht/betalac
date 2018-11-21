@@ -189,9 +189,17 @@ Calculate the percentage simularity on the basis of the primary amino acid seque
 ```{r, answer_2d}
 all_aa
 
-btaurus_vs_oaries <- pairwiseAlignment(pattern = all_aa[1], subject = all_aa[2])
-btaurus_vs_chircus <- pairwiseAlignment(pattern = all_aa[1], subject = all_aa[3])
-oaries_vs_chircus <- pairwiseAlignment(pattern = all_aa[2], subject = all_aa[3])
+btaurus_vs_oaries <- pairwiseAlignment(
+  pattern = all_aa[1], 
+  subject = all_aa[2]
+  )
+btaurus_vs_chircus <- pairwiseAlignment(
+  pattern = all_aa[1], 
+  subject = all_aa[3]
+  )
+oaries_vs_chircus <- pairwiseAlignment(
+  pattern = all_aa[2], subject = all_aa[3]
+  )
 
 ?pid
 
@@ -208,7 +216,8 @@ pid(oaries_vs_chircus, type = pid_string)
 ## Proteolytic digestion
 
 Review the vignette from the `{OrgMassSpecR}` package. 
-Try predicting the fragments by proteolytic digestion with the trypsin enzyme, for the _Bos taurus_ BLG protein. 
+Try predicting the fragments by proteolytic digestion 
+with the trypsin enzyme, for the _Bos taurus_ BLG protein. 
 
 **TIPS:**
 
@@ -226,9 +235,13 @@ seq <- all_aa %>%
 seq <- map(seq, str_remove_all, pattern = "\\*")
   
 
-btaurus_blg_trypsin <- OrgMassSpecR::Digest(sequence = seq[[1]], enzyme ="trypsin") %>% as_tibble() %>%
+btaurus_blg_trypsin <- OrgMassSpecR::Digest(
+  sequence = seq[[1]], enzyme ="trypsin"
+  ) %>% 
+  as_tibble() %>%
   mutate(width = nchar(peptide)) %>%
-  arrange(width) %>% print()
+  arrange(width) %>% 
+  print()
 ```
 
 ## Write a function that takes a sequence and returns a nice table
@@ -241,14 +254,11 @@ digest_sequence <- function(peptide, enzyme){
      mutate(width = nchar(peptide)) %>%
      arrange(width) 
   
-  
   return(digestion)
   
 }
 
 digest_sequence(seq[[1]], enzyme = "trypsin")
-
-names(seq)
 
 ## loop over each sequence
 all_predictions <- map(seq, digest_sequence, enzyme = "trypsin")
@@ -262,19 +272,23 @@ all_predictions[[3]]
 ```{r, answer_3a}
 
 ## store as xlsx
-xlsx::write.xlsx(btaurus_blg_trypsin,
-                 file = file.path(root,
-                                  "data",
-                                  "btaurus_blg_trypsin.xlsx"),
-                 sheetName = "btaurus_blg_trypsin")
+xlsx::write.xlsx(
+  btaurus_blg_trypsin,
+  file = file.path(root,
+                   "data",
+                   "btaurus_blg_trypsin.xlsx"),
+  sheetName = "btaurus_blg_trypsin"
+  )
 
 ## get the cleavage ranges
-ranges <- cleavageRanges(all_aa$btaurus, enzym="trypsin")
-ranges
-
+ranges <- cleavageRanges(all_aa$btaurus, enzym = "trypsin")
+ranges %>% 
+  as_tibble() %>%
+  arrange(width)
 
 ## get only cleavage sites
-sites <- cleavageSites(all_aa$btaurus, enzym="trypsin")
+sites <- cleavageSites(all_aa$btaurus, enzym = "trypsin")
+sites
 
 ```
 
@@ -282,108 +296,18 @@ sites <- cleavageSites(all_aa$btaurus, enzym="trypsin")
 Recycling the code from question 3A, try predicting the peptide-fragments from the Goat and the Sheep. Combine these in a IRanges object, with appropriate names (use for example Species and width). Use `lapply` to achieve your goal. 
 
 
-```{r, answer_3b}
-lapply(as.list(as.character(all_aa)), cleave, enzym = "trypsin") %>%
-  purrr::flatten() %>%
-  purrr::transpose()
+# Mass spectrometric analysis  
 
-# browseVignettes("cleaver")
-btaurus_blg_trypsin <- cleave(all_aa$btaurus, enzym="trypsin") %>%
-  as.data.frame() %>%
-  as_tibble() %>%
-  dplyr::rename(fragment = x) %>%
-  mutate(width = nchar(fragment)) %>%
-  arrange(width) %>% print
-
-
-btaurus_blg_trypsin
-
-## store as xlsx
-xlsx::write.xlsx(btaurus_blg_trypsin,
-                 file = file.path(root,
-                                  "data",
-                                  "btaurus_blg_trypsin.xlsx"),
-                 sheetName = "btaurus_blg_trypsin")
-
-## get the cleavage ranges
-ranges <- cleavageRanges(all_aa$btaurus, enzym="trypsin")
-ranges
-
-
-## get only cleavage sites
-sites <- cleavageSites(all_aa$btaurus, enzym="trypsin")
-
-```
-
-
-**3C**
-Use the function `cleavageSites()` from the `{cleaver}` package to detect all the sites at which the _Bos taurus_ `BLG` protein is cleaved. 
-
-Now convert the one-letter-amino acid code to a three-letter code with the `aaa()` function in the `{seninr}` package. Remember from the "Biological strings" (IRanges) lecture that `{seqinr}` functions work with character vectors with seperate characters for each amino acid or nucleotide.
-
-You can convert the one-letter character vector containing the full sequence string to a single character vector vector where every amino acid is a string of it's own by adapting the example below:
-
-```{r, echo=TRUE}
-## convert single string to individual character strings in a vector
-string_aa <- c(all_aa$chircus[1:4]) %>% as.character()
-string_aa_seperate <- str_split(string = string_aa, pattern = "") %>% unlist()
-
-## convert one-letter code to three letter code
-string_three_letter_aa <- seqinr::aaa(string_aa_seperate) %>% print
-```
-
-**QUESTION**
-
-Can you now figure out between which two amino acids trypsin cuts a protein?
-Try using the cleavage sites and the converted three-letter coded amino acid string encoding the `BLG` _Bos taurus_ protein.
-
-**TIPS:**
-
- - Rember that you can use a number of digits to index a vector like:
-```{r, echo=TRUE}
-index <- c(1, 3, 6, 19, 28, 211)
-letters_vector <- (rep(LETTERS, times = 10)) 
-
-index_on_letters <- letters_vector[index] %>% print()
-```
-
-```{r, answer_2b}
-btaurus_char_three_letter_aa <- all_aa$btaurus %>% 
-  as.character() %>% 
-  str_split(string = ., pattern = "") %>%
-  unlist() %>%
-  aaa() %>%
-  print()
-
-## use cleavage sites as index
-
-btaurus_char_three_letter_aa[c(sites[[1]])]
-
-btaurus_char_three_letter_aa[c(6, 7)]
-# btaurus_char_three_letter_aa[c(42, 43)]
-```
-
-## Mass spectromtric analysis  
-
-**4A**
-Structure of the protein
-Are there any lysine or argine amino acids that are followed by a proline?
-
-```{r}
-btaurus_char_three_letter_aa[1:2]
-
-ind <- str_extract_all(string = btaurus_char_three_letter_aa, pattern = c("Pro")) %>% unlist()
-ind
-btaurus_char_three_letter_aa[ind]
-```
-
-**4B**
 ## Get all structure formulas for each peptide in all digestions
 ```{r}
-formula <- OrgMassSpecR::ConvertPeptide(btaurus_blg_trypsin$fragment[1])
+formula <- OrgMassSpecR::ConvertPeptide(
+  btaurus_blg_trypsin$peptide[1])
 
-MonoisotopicMass(formula = ConvertPeptide(btaurus_blg_trypsin$fragment[1]))
-MolecularWeight(formula = ConvertPeptide(btaurus_blg_trypsin$fragment[1]))
+formula
+
+MonoisotopicMass(formula = ConvertPeptide(btaurus_blg_trypsin$peptide[1]))
+
+MolecularWeight(formula = ConvertPeptide(btaurus_blg_trypsin$peptide[1]))
 
 
 as_tibble(formula)
@@ -393,23 +317,43 @@ btaurus_blg_trypsin$fragment
 get_formula <- function(peptide){
   
   formula <- OrgMassSpecR::ConvertPeptide(peptide)
-  
   df <- formula %>% as_tibble()
 
     return(df)
 
 }
   
-get_formula(peptide = btaurus_blg_trypsin$fragment[1])  
+get_formula(peptide = btaurus_blg_trypsin$peptide[1])  
   
 
-peptide_list <- as.list(btaurus_blg_trypsin$fragment)
+peptide_list <- as.list(btaurus_blg_trypsin$peptide)
 
 ## safe loop with error catching
 formulae <- map(peptide_list, safely(get_formula))  
 formulae <- purrr::transpose(formulae)
 formulae$result %>% dplyr::bind_rows()
 formulae$error
+```
+
+## Get all Monoisotopic masses
+```{r}
+get_monoisotopic_mass <- function(peptide){
+  
+  formula <- OrgMassSpecR::MonoisotopicMass(
+    ConvertPeptide(peptide))
+  df <- formula %>% as_tibble()
+  df$peptide <- peptide
+    return(df)
+
+}
+
+get_monoisotopic_mass(peptide = btaurus_blg_trypsin$peptide[1])
+
+map(peptide_list, get_monoisotopic_mass) %>%
+  dplyr::bind_rows() %>%
+  rename(monoisotopic_mass = value)
+  
+
 ```
 
 ## Isotopic Distribution
@@ -421,13 +365,10 @@ id <- IsotopicDistribution(formula = formula) %>%
 
 ## Plot Isotopic Distribution MZ - Intensity
 ```{r}
-
-formula
-
 ggplot(data = id, aes(x = mz, y = intensity)) +
   geom_point() +
   geom_segment(aes(xend = mz, yend=-Inf)) +
-  ggtitle("Fragment 1, Bos Taurus")
+  ggtitle("Fragment 1, Bos taurus")
 
 ggplot(data = id, aes(x = mz, y = log10(intensity))) +
   geom_point() +
@@ -435,6 +376,22 @@ ggplot(data = id, aes(x = mz, y = log10(intensity))) +
 
 ```
 
+## Longest fragment
+```{r}
 
+IsotopicDistribution(formula = get_formula(peptide = btaurus_blg_trypsin$peptide[19])) %>%
+  as_tibble() %>%
+    ggplot(aes(x = mz, y = intensity)) +
+      geom_point() +
+      geom_segment(aes(xend = mz, yend=-Inf)) +
+      ggtitle("Fragment 19, Bos taurus")
+
+
+```
+
+## All masses search
+```{r}
+
+```
 
 
