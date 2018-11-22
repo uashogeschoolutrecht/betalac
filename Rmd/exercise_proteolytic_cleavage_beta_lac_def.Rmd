@@ -6,8 +6,6 @@ output:
   html_document
 ---
 
-__Try answering the questions in an Rmd script__
-
 ```{r setup}
 knitr::opts_chunk$set(echo = TRUE, 
                       warning = FALSE, 
@@ -18,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE,
 ``` 
 
 ## Setting the project root
-We need to an object for the root of the project for purposes yet to explain.
+We need an object for the root of the project for purposes yet to explain.
 ```{r, echo=TRUE, eval=TRUE, results='markup'}
 if (!require("rprojroot")) install.packages("rprojroot")
 library("rprojroot")
@@ -29,7 +27,7 @@ root
 ## Introduction
 We use the protein Beta-lactoglobulin as an example to show an _in-slico_ chemical analysis workflow in R/Bioconductor.
 
-Here we will perform an enzymatic digestion on the native beta-lactoglobulin (`BLG`) protein of different species. We will also use the Goat sequence and the Sheep sequence to explore the theory behind mass-spectrometery. The amino acid sequence for the Beta-lac (`BLG`) gene for different organisms (Cow, Sheep & Goat) will be used.
+Here we will perform an enzymatic digestion on the native beta-lactoglobulin (`BLG`) protein of different species. We will use the Cow, Goat and the Sheep sequence to explore the theory behind mass-spectrometery. The amino acid sequence for the Beta-lac (`BLG`) gene for different organisms (Cow, Sheep & Goat) will be used.
 
 We also practice a little with alignment in this exercise.
 
