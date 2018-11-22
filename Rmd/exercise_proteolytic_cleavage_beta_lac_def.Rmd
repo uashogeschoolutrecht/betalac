@@ -151,23 +151,25 @@ Combine the three seperate amino acid sequences encoding the `BLG` protein from 
 How long is each protein(fragment)?
 
 ```{r, answer_1b}
-all_aa <- c(btaurus_blg_aa, oaries_blg_aa, chircus_blg_aa)
-all_aa
+all_aa_trim <- c(btaurus_blg_aa, oaries_blg_aa, chircus_blg_aa)
+all_aa_trim
 ```
 
 ## Exercise signal peptide trim and compare to Robert Jan
 ```{r}
-all_aa_trim <- AAStringSet(all_aa, start = 17)
-all_aa_trim
+all_aa_trim_trim <- AAStringSet(all_aa_trim, start = 17)
+all_aa_trim_trim
 
 rjve_seq <- "LIVTQTMKGLDIQKVAGTWYSLAMAASDISLLDAQSAPLRVYVEELKPTPEGDLEILLQKWENDECAQKKIIAEKTKIPAVFKIDALNENKVLVLDTDYKKYLLVCMENSAEPEQSLVCQCLVRTPEVDDEALEKFDKALKALPMHIRLSFNPTQLEEQCHI"
 
 rjve_seq <- AAStringSet(rjve_seq)
 
-new_sequences <- c(rjve_seq, all_aa_trim)
+new_sequences <- c(rjve_seq, all_aa_trim_trim)
 
 alignment_blg <- AlignSeqs(new_sequences[1:2])
 BrowseSeqs(alignment_blg)
+
+alignment_blg
 
 ```
 
@@ -175,20 +177,20 @@ BrowseSeqs(alignment_blg)
 **2A**
 Align the amino acid sequences for the `BLG` protein from Cow, Sheep and Goat. What can you conclude from this alignment?
 ```{r, answer_2a}
-alignment_blg <- AlignSeqs(all_aa)
+alignment_blg <- AlignSeqs(all_aa_trim_trim)
 BrowseSeqs(alignment_blg)
 ```
 
 Align the sequences for `BLG` protein from Cow and Sheep, what is you conclusion about the homology 
 ```{r, answer_2b_1, results='show', fig.show='show'}
-alignment_blg <- AlignSeqs(all_aa[c(1:2)])
+alignment_blg <- AlignSeqs(all_aa_trim_trim[c(1:2)])
 BrowseSeqs(alignment_blg)
 ```
 
 Now do the same for the sequence from Cow and Goat
 Which animal is most related to the Cow, on the basis of this alignment? Can you think of a way to illustrate this further?
 ```{r, answer_2c}
-alignment_blg <- AlignSeqs(all_aa[c(1, 3)])
+alignment_blg <- AlignSeqs(all_aa_trim[c(1, 3)])
 BrowseSeqs(alignment_blg)
 ```
 
@@ -201,18 +203,18 @@ Calculate the percentage simularity on the basis of the primary amino acid seque
  - use the `biostrings::pid()` function to get the simularity score, use the setting in this function `type = 'PID1'`. Look at the help file of this function to see what this setting does.
  
 ```{r, answer_2d}
-all_aa
+all_aa_trim
 
 btaurus_vs_oaries <- pairwiseAlignment(
-  pattern = all_aa[1], 
-  subject = all_aa[2]
+  pattern = all_aa_trim[1], 
+  subject = all_aa_trim[2]
   )
 btaurus_vs_chircus <- pairwiseAlignment(
-  pattern = all_aa[1], 
-  subject = all_aa[3]
+  pattern = all_aa_trim[1], 
+  subject = all_aa_trim[3]
   )
 oaries_vs_chircus <- pairwiseAlignment(
-  pattern = all_aa[2], subject = all_aa[3]
+  pattern = all_aa_trim[2], subject = all_aa_trim[3]
   )
 
 ?pid
@@ -242,7 +244,7 @@ with the trypsin enzyme, for the _Bos taurus_ BLG protein.
 ```{r, demo_digestion, echo=TRUE}
 browseVignettes(package = "OrgMassSpecR")
 
-seq <- all_aa %>%
+seq <- all_aa_trim %>%
   as.list()
 
 ## remove * from sequences
@@ -295,13 +297,13 @@ xlsx::write.xlsx(
   )
 
 ## get the cleavage ranges
-ranges <- cleavageRanges(all_aa$btaurus, enzym = "trypsin")
+ranges <- cleavageRanges(all_aa_trim$btaurus, enzym = "trypsin")
 ranges %>% 
   as_tibble() %>%
   arrange(width)
 
 ## get only cleavage sites
-sites <- cleavageSites(all_aa$btaurus, enzym = "trypsin")
+sites <- cleavageSites(all_aa_trim$btaurus, enzym = "trypsin")
 sites
 
 ```
@@ -320,9 +322,11 @@ formula <- OrgMassSpecR::ConvertPeptide(
 formula
 
 MonoisotopicMass(formula = ConvertPeptide(btaurus_blg_trypsin$peptide[1]))
-
 MolecularWeight(formula = ConvertPeptide(btaurus_blg_trypsin$peptide[1]))
 
+MonoisotopicMass(formula = ConvertPeptide(btaurus_blg_trypsin$peptide[19]))
+MolecularWeight(formula = ConvertPeptide(btaurus_blg_trypsin$peptide[19]))
+## Compare to results of Robert Jan on slide 21
 
 as_tibble(formula)
 
@@ -405,7 +409,7 @@ IsotopicDistribution(formula = get_formula(peptide = btaurus_blg_trypsin$peptide
 
 ## All masses search
 ```{r}
-
+### Next step is identification
 ```
 
 
