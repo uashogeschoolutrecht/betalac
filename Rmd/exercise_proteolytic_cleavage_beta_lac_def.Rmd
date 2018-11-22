@@ -79,7 +79,7 @@ chircus_blg_aa
 Alternatively, you can also use the `{protr}` package to download sequences directly from UniProt:
 You need to know the specific UniProt identifier. For Goat `BLG` this is "B2YKY6". The result is a list of aminoacid sequence(s). You can convert this list to a more convenient object with the code below, using `biostrings::AAString()` or `biostrings::AAStringSet()`. You need to unlist the list first for this to work.
 ```{r, demo_protr, echo=TRUE}
-protr::getUniProt("B2YKY6") %>% 
+protr::getUniProt("P02756") %>% 
   unlist %>%
   AAStringSet()
 ```
@@ -153,6 +153,22 @@ How long is each protein(fragment)?
 ```{r, answer_1b}
 all_aa <- c(btaurus_blg_aa, oaries_blg_aa, chircus_blg_aa)
 all_aa
+```
+
+## Exercise signal peptide trim and compare to Robert Jan
+```{r}
+all_aa_trim <- AAStringSet(all_aa, start = 17)
+all_aa_trim
+
+rjve_seq <- "LIVTQTMKGLDIQKVAGTWYSLAMAASDISLLDAQSAPLRVYVEELKPTPEGDLEILLQKWENDECAQKKIIAEKTKIPAVFKIDALNENKVLVLDTDYKKYLLVCMENSAEPEQSLVCQCLVRTPEVDDEALEKFDKALKALPMHIRLSFNPTQLEEQCHI"
+
+rjve_seq <- AAStringSet(rjve_seq)
+
+new_sequences <- c(rjve_seq, all_aa_trim)
+
+alignment_blg <- AlignSeqs(new_sequences[1:2])
+BrowseSeqs(alignment_blg)
+
 ```
 
 ## Multiple sequence alignment
