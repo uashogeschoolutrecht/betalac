@@ -55,17 +55,17 @@ library(tidyverse)
 Obtain the amino-acid sequences for the Beta-Lactoglobuline protein (`BLG`) from Goat (_C. hircus_), Sheep (_O. aries_) and Domestic Cow (_B. taurus_).
 See code chunks below.
 
-## Retrieve aa sequence of `BLG` protein for Goat 
+## Retrieve aa sequence of `BLG` protein for Goat  
 Because the Goat sequence is not available via a Biomart search we download this sequence directly from Uniprot.
 
 The following chunk downloads the amino acid sequence for the `BLG` protein from here:  
-https://www.uniprot.org/uniprot/B2YKY6.fasta
+https://www.uniprot.org/uniprot/P02756.fasta
 And put the downloaded `.fasta` file in the `./data` folder. 
 
 ```{r, answer_1a_1, echo=TRUE}
 ## download Goat aa sequence
 dir.create(file.path(root, "data"))
-url <- c("https://www.uniprot.org/uniprot/B2YKY6.fasta")
+url <- c("https://www.uniprot.org/uniprot/P02756.fasta")
 download.file(url = url, destfile = file.path(root, "data", "chircus_blg_aminoacids.fasta"))
 ```
 
