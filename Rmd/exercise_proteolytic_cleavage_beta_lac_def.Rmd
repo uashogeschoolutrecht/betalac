@@ -3,7 +3,11 @@ title: "Exercise - Proteolytic cleavage; Beta-Lactoglobulin"
 author: "Marc A.T. Teunis"
 date: '`r Sys.Date()`'
 output:
-  html_document
+  html_document:
+    toc: true
+    toc_float: true
+    theme: united
+    highlight: tango
 ---
 
 ```{r setup}
@@ -15,7 +19,7 @@ knitr::opts_chunk$set(echo = TRUE,
                       fig.show = 'show')
 ``` 
 
-## Setting the project root
+# Setting the project root
 We need an object for the root of the project for purposes yet to explain.
 ```{r, echo=TRUE, eval=TRUE, results='markup'}
 if (!require("rprojroot")) install.packages("rprojroot")
@@ -24,7 +28,7 @@ root <- find_root_file(criterion = is_rstudio_project)
 root
 ```
 
-## Introduction
+# Introduction
 We use the protein Beta-lactoglobulin as an example to show an _in-slico_ chemical analysis workflow in R/Bioconductor.
 
 Here we will perform an enzymatic digestion on the native beta-lactoglobulin (`BLG`) protein of different species. We will use the Cow, Goat and the Sheep sequence to explore the theory behind mass-spectrometery. The amino acid sequence for the Beta-lac (`BLG`) gene for different organisms (Cow, Sheep & Goat) will be used.
@@ -33,7 +37,7 @@ We also practice a little with alignment in this exercise.
 
 The name (`external_gene_name`) of the beta-lac encoding gene is `BLG`. Synonyms are: `PAEP`,  `LGB` or `Beta-LG`
 
-## Packages
+# Packages
 Load the following packages in your session:
 ```{r, echo=TRUE}
 
@@ -50,7 +54,7 @@ library(tidyverse)
 
 ```
 
-## Data
+# Data
 
 Obtain the amino-acid sequences for the Beta-Lactoglobuline protein (`BLG`) from Goat (_C. hircus_), Sheep (_O. aries_) and Domestic Cow (_B. taurus_).
 See code chunks below.
@@ -172,14 +176,14 @@ rjve_seq@ranges@NAMES <- "RJVE_seq"
 
 new_sequences <- c(rjve_seq, all_aa_trim_trim)
 
-alignment_blg <- AlignSeqs(new_sequences[1:2])
+alignment_blg <- AlignSeqs(new_sequences[1:3])
 BrowseSeqs(alignment_blg)
 
 alignment_blg
 
 ```
 
-## Multiple sequence alignment
+# Multiple sequence alignment
 **2A**
 Align the amino acid sequences for the `BLG` protein from Cow, Sheep and Goat. What can you conclude from this alignment?
 ```{r, answer_2a}
@@ -235,7 +239,7 @@ pid(oaries_vs_chircus, type = pid_string)
 
 ```
 
-## Proteolytic digestion
+# Proteolytic digestion
 
 Review the vignette from the `{OrgMassSpecR}` package. 
 Try predicting the fragments by proteolytic digestion 
@@ -412,9 +416,7 @@ IsotopicDistribution(formula = get_formula(peptide = btaurus_blg_trypsin$peptide
 
 ```
 
-## All masses search
+# Identification
 ```{r}
 ### Next step is identification
 ```
-
-
