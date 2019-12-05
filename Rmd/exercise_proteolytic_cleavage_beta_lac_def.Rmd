@@ -77,6 +77,7 @@ chircus_blg_aa
 ```
 
 Alternatively, you can also use the `{protr}` package to download sequences directly from UniProt:
+
 You need to know the specific UniProt identifier. For Goat `BLG` this is "B2YKY6". The result is a list of aminoacid sequence(s). You can convert this list to a more convenient object with the code below, using `biostrings::AAString()` or `biostrings::AAStringSet()`. You need to unlist the list first for this to work.
 ```{r, demo_protr, echo=TRUE}
 protr::getUniProt("P02756") %>% 
@@ -118,7 +119,7 @@ names(query) <- beta_lac_gene_name
 query_btaurus <- query[["PAEP"]] 
 
 btaurus_blg_aa <- DNAStringSet(query_btaurus$coding) %>% Biostrings::translate()
-names(btaurus_blg_aa) <- "btaurus"
+btaurus_blg_aa@ranges@NAMES <- c("btaurus", "btaurus", "btaurus")
 btaurus_blg_aa
 ```
 
@@ -151,7 +152,11 @@ Combine the three seperate amino acid sequences encoding the `BLG` protein from 
 How long is each protein(fragment)?
 
 ```{r, answer_1b}
-all_aa_trim <- c(btaurus_blg_aa, oaries_blg_aa, chircus_blg_aa)
+
+
+all_aa_trim <- c(btaurus_blg_aa, 
+                 oaries_blg_aa, 
+                 chircus_blg_aa)
 all_aa_trim
 ```
 
@@ -163,6 +168,7 @@ all_aa_trim_trim
 rjve_seq <- "LIVTQTMKGLDIQKVAGTWYSLAMAASDISLLDAQSAPLRVYVEELKPTPEGDLEILLQKWENDECAQKKIIAEKTKIPAVFKIDALNENKVLVLDTDYKKYLLVCMENSAEPEQSLVCQCLVRTPEVDDEALEKFDKALKALPMHIRLSFNPTQLEEQCHI"
 
 rjve_seq <- AAStringSet(rjve_seq)
+rjve_seq@ranges@NAMES <- "RJVE_seq"
 
 new_sequences <- c(rjve_seq, all_aa_trim_trim)
 
@@ -183,14 +189,14 @@ BrowseSeqs(alignment_blg)
 
 Align the sequences for `BLG` protein from Cow and Sheep, what is you conclusion about the homology 
 ```{r, answer_2b_1, results='show', fig.show='show'}
-alignment_blg <- AlignSeqs(all_aa_trim_trim[c(1:2)])
+alignment_blg <- AlignSeqs(all_aa_trim_trim[c(1:4)])
 BrowseSeqs(alignment_blg)
 ```
 
 Now do the same for the sequence from Cow and Goat
 Which animal is most related to the Cow, on the basis of this alignment? Can you think of a way to illustrate this further?
 ```{r, answer_2c}
-alignment_blg <- AlignSeqs(all_aa_trim[c(1, 3)])
+alignment_blg <- AlignSeqs(all_aa_trim[c(1, 5)])
 BrowseSeqs(alignment_blg)
 ```
 
@@ -284,7 +290,7 @@ all_predictions[[2]]
 all_predictions[[3]]
 ```
 
-## Let's examine the Cow a bit further
+## Let's examine the Cow a bit further - We only examine the first sequence of the AAStringSet
 ```{r, answer_3a}
 
 ## store as xlsx
@@ -303,14 +309,13 @@ ranges %>%
   arrange(width)
 
 ## get only cleavage sites
-sites <- cleavageSites(all_aa_trim$btaurus, enzym = "trypsin")
+sites <- cleavageSites(all_aa_trim[1], enzym = "trypsin")
 sites
 
 ```
 
 **3B**
 Recycling the code from question 3A, try predicting the peptide-fragments from the Goat and the Sheep. Combine these in a IRanges object, with appropriate names (use for example Species and width). Use `lapply` to achieve your goal. 
-
 
 # Mass spectrometric analysis  
 
@@ -330,7 +335,7 @@ MolecularWeight(formula = ConvertPeptide(btaurus_blg_trypsin$peptide[19]))
 
 as_tibble(formula)
 
-btaurus_blg_trypsin$fragment
+# btaurus_blg_trypsin$fragment
 
 get_formula <- function(peptide){
   
