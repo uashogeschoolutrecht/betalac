@@ -298,18 +298,17 @@ all_predictions[[3]]
 ```{r, answer_3a}
 
 ## store as xlsx
-xlsx::write.xlsx(
+readr::write_csv(
   btaurus_blg_trypsin,
-  file = file.path(root,
+  path = file.path(root,
                    "data",
-                   "btaurus_blg_trypsin.xlsx"),
-  sheetName = "btaurus_blg_trypsin"
-  )
+                   "btaurus_blg_trypsin.csv"))
 
 ## get the cleavage ranges
-ranges <- cleavageRanges(all_aa_trim$btaurus, enzym = "trypsin")
-ranges %>% 
-  as_tibble() %>%
+ranges <- cleavageRanges(all_aa_trim$btaurus, enzym = "trypsin") 
+
+tibble(width = ranges@width, 
+       start = ranges@start) %>%
   arrange(width)
 
 ## get only cleavage sites
