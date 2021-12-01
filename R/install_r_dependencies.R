@@ -6,13 +6,13 @@ pkgs_bioc <- c(
   "Biostrings",
   "DECIPHER",
   "OrgMassSpecR", 
-  "protr"
+  "protr",
+  "cleaver"
   )
 
 pkgs_cran <- c(  
   "seqinr",  
-  "rentrez",
-  "cleaver"
+  "rentrez"
   )
 
 walk(

@@ -2,12 +2,10 @@
 title: "Exercise - Proteolytic cleavage; Beta-Lactoglobulin"
 author: "Marc A.T. Teunis"
 date: '`r Sys.Date()`'
-output:
-  html_document:
-    toc: true
-    toc_float: true
-    theme: united
-    highlight: tango
+output: 
+  rmdformats::downcute:
+    self_contained: TRUE
+    number_sections: FALSE
 ---
 
 ```{r setup}
