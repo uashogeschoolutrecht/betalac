@@ -49,7 +49,7 @@ library(cleaver)
 library(OrgMassSpecR) 
 library(protr)
 library(tidyverse)
-
+library(here)
 ```
 
 # Data
@@ -57,7 +57,7 @@ library(tidyverse)
 Obtain the amino-acid sequences for the Beta-Lactoglobuline protein (`BLG`) from Goat (_C. hircus_), Sheep (_O. aries_) and Domestic Cow (_B. taurus_).
 See code chunks below.
 
-## Retrieve aa sequence of `BLG` protein for Goat  
+## Retrieve amino acid sequence of `BLG` protein for Goat  
 Because the Goat sequence is not available via a Biomart search we download this sequence directly from Uniprot.
 
 The following chunk downloads the amino acid sequence for the `BLG` protein from here:  
@@ -66,43 +66,48 @@ And put the downloaded `.fasta` file in the `./data` folder.
 
 ```{r, answer_1a_1, echo=TRUE}
 ## download Goat aa sequence
-dir.create(file.path(root, "data"))
+## dir.create(here("data")) 
 url <- c("https://www.uniprot.org/uniprot/P02756.fasta")
-download.file(url = url, destfile = file.path(root, "data", "chircus_blg_aminoacids.fasta"))
+download.file(url = url, destfile = here("data", "chircus_blg_aminoacids.fasta"))
 ```
 
 ## Convert to Amino Acids
 ```{r}
-chircus_blg_aa <- Biostrings::readAAStringSet(filepath = file.path(root, "data", "chircus_blg_aminoacids.fasta"))
+chircus_blg_aa <- Biostrings::readAAStringSet(filepath = here("data", "chircus_blg_aminoacids.fasta"))
 names(chircus_blg_aa) <- c("chircus")
 chircus_blg_aa
 ```
 
 Alternatively, you can also use the `{protr}` package to download sequences directly from UniProt:
 
-You need to know the specific UniProt identifier. For Goat `BLG` this is "B2YKY6". The result is a list of aminoacid sequence(s). You can convert this list to a more convenient object with the code below, using `biostrings::AAString()` or `biostrings::AAStringSet()`. You need to unlist the list first for this to work.
+You need to know the specific UniProt identifier. For Goat `BLG` this is `B2YKY6`. The result is a list of amino acid sequence(s). You can convert this list to a more convenient object with the code below, using `biostrings::AAString()` or `biostrings::AAStringSet()`. You need to un-list the list first for this to work.
 ```{r, demo_protr, echo=TRUE}
 protr::getUniProt("P02756") %>% 
   unlist %>%
   AAStringSet()
 ```
 
-## Retrieve aa sequence of `BLG` protein for the Cow (_B. taurus_).
+## Retrieve aa sequence of `BLG` protein for the Cow (`_B. taurus_`).
 The BLG protein has multiple synonyms. The code below uses an `lapply` loop to test for each known synonym: `BLG`, `PAEP` `Beta-LG` and `LGB` 
 ```{r, demo_cow_seq, echo=TRUE}
+## specify the 'market place' to use
 mart <- useMart(biomart = "ensembl")
-btaurus_mart <- useDataset(dataset = "btaurus_gene_ensembl", 
-                        mart=mart)
+## specify from which 'dataset', in this case from Domestic Cow
+btaurus_mart <- useDataset(
+  dataset = "btaurus_gene_ensembl", 
+  mart = mart)
 
+## there are several names for the same protein
 beta_lac_gene_name <- c("BLG", "PAEP", "LGB", "Beta-LG")
 
 attributes <- listAttributes(mart = btaurus_mart)
 
 loop_gene_names <- function(x, mart){
-  results <- getBM(attributes = c('ensembl_gene_id', 
-                                  "external_gene_name",
-                                  "coding"), 
-    filters = 'external_gene_name', 
+  results <- getBM(
+    attributes = c("ensembl_gene_id",        ## attributes are output
+                   "external_gene_name",
+                    "coding"), 
+    filters = "external_gene_name",          ## filters in input type
     values = x, 
     mart = mart) %>%
     as_tibble() 
