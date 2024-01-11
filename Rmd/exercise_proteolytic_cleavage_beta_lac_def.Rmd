@@ -17,14 +17,6 @@ knitr::opts_chunk$set(echo = TRUE,
                       fig.show = 'show')
 ``` 
 
-# Setting the project root
-We need an object for the root of the project for purposes yet to explain.
-```{r, echo=TRUE, eval=TRUE, results='markup'}
-#if (!require("rprojroot")) install.packages("rprojroot")
-#library("rprojroot")
-#root <- find_root_file(criterion = is_rstudio_project)
-#root
-```
 
 # Introduction
 We use the protein Beta-lactoglobulin as an example to show an _in-slico_ chemical analysis workflow in R/Bioconductor.
@@ -265,7 +257,7 @@ seq <- all_aa_trim %>%
 seq <- modified_aa_list <- lapply(seq, function(x) gsub("\\*$", "", x))  
 
 btaurus_blg_trypsin <- OrgMassSpecR::Digest(
-  sequence = seq_modified[[1]], enzyme ="trypsin"
+  sequence = seq[[1]], enzyme ="trypsin"
   ) %>% 
   as_tibble() %>%
   mutate(width = nchar(peptide)) %>%
