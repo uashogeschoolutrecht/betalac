@@ -3,7 +3,7 @@
 This is the public repo for the "Analysis of Beta-Lactoglobuline" workshop
 
 ## Published version
-A webversion of this demo can be found [here](./Rmd/exercise_proteolytic_cleavage_beta_lac_def.html)
+A webversion of this demo can be found [here](./Rmd/exercise_proteolytic_cleavage_beta_lac_def.html) and online [here](https://rstudio-connect.hu.nl/betalac/)
 
 To install the R dependencies run
 
