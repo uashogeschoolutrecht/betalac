@@ -20,10 +20,10 @@ knitr::opts_chunk$set(echo = TRUE,
 # Setting the project root
 We need an object for the root of the project for purposes yet to explain.
 ```{r, echo=TRUE, eval=TRUE, results='markup'}
-if (!require("rprojroot")) install.packages("rprojroot")
-library("rprojroot")
-root <- find_root_file(criterion = is_rstudio_project)
-root
+#if (!require("rprojroot")) install.packages("rprojroot")
+#library("rprojroot")
+#root <- find_root_file(criterion = is_rstudio_project)
+#root
 ```
 
 # Introduction
@@ -261,11 +261,11 @@ seq <- all_aa_trim %>%
   as.list()
 
 ## remove * from sequences
-seq <- map(seq, str_remove_all, pattern = "\\*")
-  
+#seq <- map(seq, str_remove_all, pattern = "\\*")
+seq <- modified_aa_list <- lapply(seq, function(x) gsub("\\*$", "", x))  
 
 btaurus_blg_trypsin <- OrgMassSpecR::Digest(
-  sequence = seq[[1]], enzyme ="trypsin"
+  sequence = seq_modified[[1]], enzyme ="trypsin"
   ) %>% 
   as_tibble() %>%
   mutate(width = nchar(peptide)) %>%
@@ -303,8 +303,7 @@ all_predictions[[3]]
 ## store as xlsx
 readr::write_csv(
   btaurus_blg_trypsin,
-  path = file.path(root,
-                   "data",
+  file = here::here("data",
                    "btaurus_blg_trypsin.csv"))
 
 ## get the cleavage ranges
@@ -418,7 +417,7 @@ IsotopicDistribution(formula = get_formula(peptide = btaurus_blg_trypsin$peptide
 
 ```
 
-# Identification
+## Identification
 ```{r}
 ### Next step is identification
 ```

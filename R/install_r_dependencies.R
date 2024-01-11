@@ -15,13 +15,13 @@ pkgs_cran <- c(
   "rentrez"
   )
 
-walk(
+purrr::walk(
   pkgs_bioc,
-  BiocManager::install
+  pak::pkg_install
 )
 
-walk(
+purrr::walk(
   pkgs_cran,
-  install.packages
+  pak::pkg_install
 )
 
