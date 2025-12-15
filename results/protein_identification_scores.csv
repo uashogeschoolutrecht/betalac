@@ -1,0 +1,4 @@
+species,peptides_matched,sequence_coverage,mean_mass_error_ppm,median_mass_error_ppm,total_intensity,mass_accuracy_score,coverage_score,intensity_score,composite_score
+Bos_taurus,20,80,24.26,22.48,1020800.1487930305,75.74,80,60.801408647337894,74.88228172946758
+Capra_hircus,7,53.85,11.62,10.9,389638.8241481036,88.38,53.85,41.06416082389464,61.65183216477893
+Ovis_aries,12,52.17,25.16,22.48,615733.2032856066,74.84,52.17,48.134430528767474,58.163886105753505
